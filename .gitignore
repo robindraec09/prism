@@ -1,0 +1,20 @@
+node_modules/
+dist/
+coverage/
+.turbo/
+*.log
+.DS_Store
+.env
+.env.*
+test-results/
+prism-report/
+# Android
+*.apk
+.gradle/
+local.properties
+# iOS
+DerivedData/
+*.xcuserstate
+xcuserdata/
+# Claude Code personal settings
+.claude/settings.local.json

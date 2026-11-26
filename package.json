@@ -1,0 +1,12 @@
+{
+  "name": "prism-monorepo",
+  "private": true,
+  "description": "Prism: open-source UI, API and performance testing in TypeScript",
+  "license": "MIT",
+  "type": "module",
+  "scripts": {
+    "build": "pnpm -r --if-present build",
+    "test": "pnpm -r --if-present test",
+    "lint": "pnpm -r --if-present lint"
+  }
+}
