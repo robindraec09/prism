@@ -115,7 +115,7 @@
         "checked": { "enum": [true, false, "mixed", null] },
         "expanded": { "type": ["boolean", "null"] },
         "scrollable": { "type": "boolean" },
-        "password": { "type": "boolean" },
+        "password": { "type": "boolean", "description": "When true, value and text are null and raw has no value/text keys; raw.label is allowed (iOS field label)." },
         "webContent": { "type": "boolean" },
         "level": { "type": "integer", "minimum": 1 },
         "context": { "type": "string", "pattern": "^(native|web:[^/]+(/.+)?)$" },
@@ -126,7 +126,8 @@
       "then": {
         "properties": {
           "value": { "type": "null" },
-          "raw": { "not": { "anyOf": [{ "required": ["value"] }, { "required": ["text"] }, { "required": ["label"] }] } }
+          "text": { "type": "null" },
+          "raw": { "not": { "anyOf": [{ "required": ["value"] }, { "required": ["text"] }] } }
         }
       }
     },
@@ -154,7 +155,7 @@
       "type": "object",
       "required": ["snapshotId", "capturedAt", "platform", "screen", "root", "nodeCount", "truncated"],
       "properties": {
-        "snapshotId": { "type": "string", "minLength": 1, "description": "InstanceScopedId for agents; web driver IDs are host-chosen." },
+        "snapshotId": { "$ref": "#/$defs/InstanceScopedId", "description": "Agents and the web driver both use <instanceId>.<local id>." },
         "capturedAt": { "$ref": "#/$defs/Timestamp" },
         "platform": { "type": "string", "description": "Known values: KnownPlatform." },
         "screen": { "$ref": "#/$defs/Screen" },
@@ -264,7 +265,7 @@
     "NodeRef": {
       "type": "object",
       "required": ["snapshotId", "nodeId"],
-      "properties": { "snapshotId": { "type": "string" }, "nodeId": { "type": "string" } }
+      "properties": { "snapshotId": { "$ref": "#/$defs/InstanceScopedId" }, "nodeId": { "type": "string" } }
     },
     "Target": {
       "oneOf": [
@@ -280,7 +281,8 @@
         "enabled": { "type": "boolean" },
         "onScreen": { "type": "boolean" },
         "unobscured": { "type": "boolean" },
-        "stableMs": { "type": "integer", "minimum": 0 }
+        "stableMs": { "type": "integer", "minimum": 0 },
+        "within": { "$ref": "#/$defs/NodeRef" }
       }
     },
     "Ancestor": {
@@ -312,7 +314,7 @@
       "type": "object",
       "required": ["snapshotId", "matches", "total", "truncated", "searched"],
       "properties": {
-        "snapshotId": { "type": "string" },
+        "snapshotId": { "$ref": "#/$defs/InstanceScopedId" },
         "matches": { "type": "array", "items": { "$ref": "#/$defs/Match" } },
         "total": { "type": "integer", "minimum": 0 },
         "truncated": { "type": "boolean" },
@@ -327,6 +329,18 @@
         "at": { "$ref": "#/$defs/Point" },
         "durationMs": { "type": "number", "minimum": 0 },
         "match": { "$ref": "#/$defs/Match" },
+        "actedOn": {
+          "type": "object",
+          "description": "Retargeted actionable ancestor (protocol.md 9.2), when it differs from match.",
+          "required": ["nodeId", "role", "nativeType", "path"],
+          "properties": {
+            "nodeId": { "type": "string" },
+            "role": { "type": "string" },
+            "nativeType": { "type": "string" },
+            "path": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+          }
+        },
+        "idle": { "$ref": "#/$defs/Idle" },
         "method": { "type": "string", "description": "action.type only: keys | setText | typeText" }
       }
     },
@@ -419,7 +433,7 @@
         "ok": { "type": "boolean" },
         "instanceId": { "$ref": "#/$defs/InstanceId" },
         "uptimeMs": { "type": "number", "minimum": 0 },
-        "session": { "type": ["string", "null"] },
+        "session": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/InstanceScopedId" }] },
         "running": {
           "oneOf": [
             { "type": "null" },
@@ -444,13 +458,14 @@
       }
     },
     "Request": {
+      "description": "Unknown parameter names are ignored; an unknown value for a known parameter, or a missing required parameter, gives invalid-request (protocol.md 5.2).",
       "type": "object",
       "required": ["v", "id", "cmd", "params"],
       "properties": {
         "v": { "$ref": "#/$defs/Version" },
         "id": { "type": "string", "minLength": 1 },
         "cmd": { "type": "string", "pattern": "^(hello|[a-z]+\\.[a-zA-Z]+)$" },
-        "session": { "type": "string" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
         "params": { "type": "object" },
         "timeoutMs": { "type": "integer", "minimum": 1 }
       },
@@ -507,7 +522,12 @@
               "params": {
                 "type": "object",
                 "required": ["target"],
-                "properties": { "target": { "$ref": "#/$defs/Target" }, "offset": { "$ref": "#/$defs/Point" }, "checks": { "$ref": "#/$defs/Checks" } }
+                "properties": {
+                  "target": { "$ref": "#/$defs/Target" },
+                  "offset": { "$ref": "#/$defs/Point" },
+                  "checks": { "$ref": "#/$defs/Checks" },
+                  "settle": { "$ref": "#/$defs/Settle" }
+                }
               }
             }
           }
@@ -522,10 +542,31 @@
                 "properties": {
                   "target": { "$ref": "#/$defs/Target" },
                   "text": { "type": "string" },
-                  "mode": { "type": "string", "description": "append | replace" },
+                  "mode": { "type": "string", "description": "append | replace; other values give invalid-request" },
                   "secret": { "type": "boolean" },
-                  "checks": { "$ref": "#/$defs/Checks" }
+                  "checks": { "$ref": "#/$defs/Checks" },
+                  "settle": { "$ref": "#/$defs/Settle" }
                 }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "action.setValue" } } },
+          "then": {
+            "properties": {
+              "params": { "type": "object", "required": ["value"], "properties": { "value": { "type": ["number", "string"] } } }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "element.scrollIntoView" } } },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": ["target"],
+                "properties": { "target": { "$ref": "#/$defs/Target" }, "maxSwipes": { "type": "integer", "minimum": 1 } }
               }
             }
           }
@@ -574,7 +615,7 @@
       "properties": {
         "v": { "$ref": "#/$defs/Version" },
         "event": { "type": "string", "pattern": "^[a-z]+\\.[a-zA-Z]+$" },
-        "session": { "type": "string" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
         "seq": { "type": "integer", "minimum": 1 },
         "time": { "$ref": "#/$defs/Timestamp" },
         "source": { "type": "string", "description": "Known values: KnownEventSource." },
@@ -587,7 +628,7 @@
       "required": ["type", "session", "afterSeq"],
       "properties": {
         "type": { "const": "resume" },
-        "session": { "type": "string" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
         "afterSeq": { "type": "integer", "minimum": 0 }
       }
     },
@@ -597,7 +638,7 @@
       "required": ["type", "session", "fromSeq", "toSeq"],
       "properties": {
         "type": { "const": "gap" },
-        "session": { "type": "string" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
         "fromSeq": { "type": "integer", "minimum": 1 },
         "toSeq": { "type": "integer", "minimum": 1 }
       }
