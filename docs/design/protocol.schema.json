@@ -1,0 +1,450 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://prism.dev/schemas/protocol/1.0.0/protocol.schema.json",
+  "title": "Prism host-agent protocol 1.0.0",
+  "description": "Normalised UI tree, locator AST and message envelope. Normative text: docs/design/protocol.md. Receivers must ignore unknown fields, so objects allow additional properties.",
+  "oneOf": [
+    { "$ref": "#/$defs/Request" },
+    { "$ref": "#/$defs/Response" },
+    { "$ref": "#/$defs/Event" }
+  ],
+  "$defs": {
+    "Version": {
+      "type": "string",
+      "pattern": "^[0-9]+\\.[0-9]+$",
+      "description": "MAJOR.MINOR"
+    },
+    "Timestamp": { "type": "string", "format": "date-time" },
+    "Point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+    },
+    "Rect": {
+      "type": "object",
+      "description": "Device-independent pixels, origin top-left of the screen in the current orientation.",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 }
+      }
+    },
+    "Insets": {
+      "type": "object",
+      "required": ["top", "right", "bottom", "left"],
+      "properties": {
+        "top": { "type": "number" },
+        "right": { "type": "number" },
+        "bottom": { "type": "number" },
+        "left": { "type": "number" }
+      }
+    },
+    "Screen": {
+      "type": "object",
+      "required": ["width", "height", "scale", "orientation"],
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
+        "orientation": { "enum": ["portrait", "landscape", "portraitUpsideDown", "landscapeRight"] },
+        "insets": { "$ref": "#/$defs/Insets" }
+      }
+    },
+    "Role": {
+      "type": "string",
+      "description": "v1.0 vocabulary. Consumers treat values outside this list (added in later minors) as 'generic'; producers on 1.0 must only emit these.",
+      "enum": [
+        "application", "window", "document", "webview", "dialog", "alert", "keyboard", "generic", "group", "toolbar",
+        "list", "listitem", "grid", "row", "cell", "tablist", "tab", "menu", "menuitem", "listbox", "option",
+        "button", "link", "textbox", "searchbox", "checkbox", "radio", "switch", "slider", "spinbutton", "combobox", "progressbar",
+        "text", "heading", "image"
+      ]
+    },
+    "NullableString": { "type": ["string", "null"] },
+    "Node": {
+      "type": "object",
+      "required": [
+        "id", "role", "name", "text", "value", "testId", "nativeType", "bounds",
+        "visible", "onScreen", "enabled", "focused", "selected", "checked",
+        "scrollable", "password", "context", "children"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": { "$ref": "#/$defs/Role" },
+        "name": { "$ref": "#/$defs/NullableString" },
+        "text": { "$ref": "#/$defs/NullableString" },
+        "value": { "$ref": "#/$defs/NullableString" },
+        "hint": { "$ref": "#/$defs/NullableString" },
+        "testId": { "$ref": "#/$defs/NullableString" },
+        "nativeType": { "type": "string" },
+        "bounds": { "$ref": "#/$defs/Rect" },
+        "visible": { "type": "boolean" },
+        "onScreen": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "focused": { "type": "boolean" },
+        "selected": { "type": "boolean" },
+        "checked": { "enum": [true, false, "mixed", null] },
+        "expanded": { "type": ["boolean", "null"] },
+        "scrollable": { "type": "boolean" },
+        "password": { "type": "boolean" },
+        "level": { "type": "integer", "minimum": 1 },
+        "context": { "type": "string", "pattern": "^(native|web:[^/]+(/.+)?)$" },
+        "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } },
+        "raw": { "type": "object" }
+      },
+      "if": { "properties": { "password": { "const": true } } },
+      "then": { "properties": { "value": { "type": "null" } } }
+    },
+    "Idle": {
+      "type": "object",
+      "required": ["settled", "waitedMs"],
+      "properties": {
+        "settled": { "type": "boolean" },
+        "waitedMs": { "type": "number", "minimum": 0 },
+        "animating": { "type": "boolean" }
+      }
+    },
+    "Snapshot": {
+      "type": "object",
+      "required": ["snapshotId", "capturedAt", "platform", "screen", "root", "nodeCount"],
+      "properties": {
+        "snapshotId": { "type": "string", "minLength": 1 },
+        "capturedAt": { "$ref": "#/$defs/Timestamp" },
+        "platform": { "enum": ["android", "ios", "web"] },
+        "screen": { "$ref": "#/$defs/Screen" },
+        "idle": { "$ref": "#/$defs/Idle" },
+        "root": { "$ref": "#/$defs/Node" },
+        "nodeCount": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "TextMatch": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["text"],
+          "properties": { "text": { "type": "string" }, "exact": { "type": "boolean" } }
+        },
+        {
+          "type": "object",
+          "required": ["regex"],
+          "properties": {
+            "regex": {
+              "type": "object",
+              "required": ["source"],
+              "properties": { "source": { "type": "string" }, "flags": { "type": "string", "pattern": "^[imsu]*$" } }
+            }
+          }
+        }
+      ]
+    },
+    "LocatorCommon": {
+      "type": "object",
+      "properties": {
+        "nth": { "type": "integer" },
+        "filter": {
+          "type": "object",
+          "properties": {
+            "visible": { "type": "boolean" },
+            "enabled": { "type": "boolean" },
+            "onScreen": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "Locator": {
+      "allOf": [{ "$ref": "#/$defs/LocatorCommon" }],
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["kind", "role"],
+          "properties": { "kind": { "const": "role" }, "role": { "$ref": "#/$defs/Role" }, "name": { "$ref": "#/$defs/TextMatch" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "text" },
+            "text": { "type": "string" },
+            "exact": { "type": "boolean" },
+            "regex": { "$ref": "#/$defs/TextMatch/oneOf/1/properties/regex" }
+          },
+          "oneOf": [{ "required": ["text"] }, { "required": ["regex"] }]
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "properties": {
+            "kind": { "const": "label" },
+            "text": { "type": "string" },
+            "exact": { "type": "boolean" },
+            "regex": { "$ref": "#/$defs/TextMatch/oneOf/1/properties/regex" }
+          },
+          "oneOf": [{ "required": ["text"] }, { "required": ["regex"] }]
+        },
+        {
+          "type": "object",
+          "required": ["kind", "value"],
+          "properties": { "kind": { "const": "testId" }, "value": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "selector"],
+          "properties": { "kind": { "const": "css" }, "selector": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "expr"],
+          "properties": { "kind": { "const": "xpath" }, "expr": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "engine", "query"],
+          "properties": {
+            "kind": { "const": "native" },
+            "engine": { "enum": ["uiautomator", "nspredicate", "classchain"] },
+            "query": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "of"],
+          "properties": {
+            "kind": { "enum": ["and", "or"] },
+            "of": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Locator" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind", "scope", "target"],
+          "properties": {
+            "kind": { "const": "within" },
+            "scope": { "$ref": "#/$defs/Locator" },
+            "target": { "$ref": "#/$defs/Locator" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["kind"],
+          "description": "Host-only. Agents never receive this kind.",
+          "properties": {
+            "kind": { "const": "platform" },
+            "web": { "$ref": "#/$defs/Locator" },
+            "android": { "$ref": "#/$defs/Locator" },
+            "ios": { "$ref": "#/$defs/Locator" },
+            "default": { "$ref": "#/$defs/Locator" }
+          },
+          "minProperties": 2
+        }
+      ]
+    },
+    "NodeRef": {
+      "type": "object",
+      "required": ["snapshotId", "nodeId"],
+      "properties": { "snapshotId": { "type": "string" }, "nodeId": { "type": "string" } }
+    },
+    "Target": {
+      "oneOf": [
+        { "type": "object", "required": ["node"], "properties": { "node": { "$ref": "#/$defs/NodeRef" } } },
+        { "type": "object", "required": ["locator"], "properties": { "locator": { "$ref": "#/$defs/Locator" } } },
+        { "type": "object", "required": ["point"], "properties": { "point": { "$ref": "#/$defs/Point" } } }
+      ]
+    },
+    "Match": {
+      "type": "object",
+      "required": ["node", "path"],
+      "properties": {
+        "node": { "$ref": "#/$defs/Node" },
+        "path": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+        "siblingCount": { "type": "integer", "minimum": 0 },
+        "ancestors": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["role", "nativeType", "index"],
+            "properties": {
+              "role": { "$ref": "#/$defs/Role" },
+              "nativeType": { "type": "string" },
+              "testId": { "$ref": "#/$defs/NullableString" },
+              "name": { "$ref": "#/$defs/NullableString" },
+              "index": { "type": "integer", "minimum": 0 }
+            }
+          }
+        }
+      }
+    },
+    "FindResult": {
+      "type": "object",
+      "required": ["snapshotId", "matches", "total", "truncated"],
+      "properties": {
+        "snapshotId": { "type": "string" },
+        "matches": { "type": "array", "items": { "$ref": "#/$defs/Match" } },
+        "total": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+    "Screenshot": {
+      "type": "object",
+      "required": ["format", "width", "height", "scale", "orientation", "capturedAt"],
+      "properties": {
+        "format": { "enum": ["png", "jpeg"] },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
+        "orientation": { "$ref": "#/$defs/Screen/properties/orientation" },
+        "region": { "$ref": "#/$defs/Rect" },
+        "data": { "type": "string", "contentEncoding": "base64" },
+        "artifactId": { "type": "string" },
+        "capturedAt": { "$ref": "#/$defs/Timestamp" }
+      },
+      "oneOf": [{ "required": ["data"] }, { "required": ["artifactId"] }]
+    },
+    "HelloParams": {
+      "type": "object",
+      "required": ["client", "protocol"],
+      "properties": {
+        "client": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": { "name": { "type": "string" }, "version": { "type": "string" } }
+        },
+        "protocol": {
+          "type": "object",
+          "required": ["min", "max"],
+          "properties": { "min": { "$ref": "#/$defs/Version" }, "max": { "$ref": "#/$defs/Version" } }
+        },
+        "want": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "HelloResult": {
+      "type": "object",
+      "required": ["protocol", "agent", "capabilities", "device"],
+      "properties": {
+        "protocol": {
+          "type": "object",
+          "required": ["selected", "min", "max"],
+          "properties": {
+            "selected": { "$ref": "#/$defs/Version" },
+            "min": { "$ref": "#/$defs/Version" },
+            "max": { "$ref": "#/$defs/Version" }
+          }
+        },
+        "agent": {
+          "type": "object",
+          "required": ["name", "version", "platform"],
+          "properties": {
+            "name": { "type": "string" },
+            "version": { "type": "string" },
+            "platform": { "enum": ["android", "ios"] }
+          }
+        },
+        "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "device": { "$ref": "#/$defs/DeviceInfo" }
+      }
+    },
+    "DeviceInfo": {
+      "type": "object",
+      "required": ["platform", "osVersion", "model", "emulator", "screen"],
+      "properties": {
+        "platform": { "enum": ["android", "ios"] },
+        "osVersion": { "type": "string" },
+        "apiLevel": { "type": "integer" },
+        "model": { "type": "string" },
+        "serial": { "type": "string" },
+        "udid": { "type": "string" },
+        "emulator": { "type": "boolean" },
+        "screen": { "$ref": "#/$defs/Screen" },
+        "locale": { "type": "string" },
+        "timeZone": { "type": "string" }
+      }
+    },
+    "ErrorCode": {
+      "type": "string",
+      "description": "Known 1.0 codes are listed in 'examples'; later minors may add codes, so any kebab-case string is accepted.",
+      "pattern": "^[a-z]+(-[a-z]+)*$",
+      "examples": [
+        "invalid-request", "unknown-command", "unsupported", "unauthorized", "version-mismatch",
+        "session-not-found", "busy", "cancelled", "element-not-found", "ambiguous", "stale-node",
+        "stale-snapshot", "not-interactable", "context-not-found", "timeout", "app-not-running",
+        "app-crashed", "agent-crashed", "internal"
+      ]
+    },
+    "Error": {
+      "type": "object",
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": { "$ref": "#/$defs/ErrorCode" },
+        "message": { "type": "string", "minLength": 1 },
+        "retryable": { "type": "boolean" },
+        "details": { "type": "object" }
+      }
+    },
+    "Request": {
+      "type": "object",
+      "required": ["v", "id", "cmd", "params"],
+      "properties": {
+        "v": { "$ref": "#/$defs/Version" },
+        "id": { "type": "string", "minLength": 1 },
+        "cmd": { "type": "string", "pattern": "^(hello|[a-z]+\\.[a-zA-Z]+)$" },
+        "session": { "type": "string" },
+        "params": { "type": "object" },
+        "timeoutMs": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "cmd": { "const": "hello" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/HelloParams" } } }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "element.find" } } },
+          "then": {
+            "required": ["session"],
+            "properties": { "params": { "type": "object", "required": ["locator"], "properties": { "locator": { "$ref": "#/$defs/Locator" } } } }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "pattern": "^action\\.(tap|doubleTap|longPress|clear)$" } } },
+          "then": {
+            "required": ["session"],
+            "properties": { "params": { "type": "object", "required": ["target"], "properties": { "target": { "$ref": "#/$defs/Target" } } } }
+          }
+        }
+      ]
+    },
+    "Timing": {
+      "type": "object",
+      "required": ["startedAt", "durationMs"],
+      "properties": { "startedAt": { "$ref": "#/$defs/Timestamp" }, "durationMs": { "type": "number", "minimum": 0 } }
+    },
+    "Response": {
+      "type": "object",
+      "required": ["v", "id", "ok", "timing"],
+      "properties": {
+        "v": { "$ref": "#/$defs/Version" },
+        "id": { "type": "string" },
+        "ok": { "type": "boolean" },
+        "result": { "type": "object" },
+        "error": { "$ref": "#/$defs/Error" },
+        "timing": { "$ref": "#/$defs/Timing" }
+      },
+      "if": { "properties": { "ok": { "const": true } } },
+      "then": { "required": ["result"], "not": { "required": ["error"] } },
+      "else": { "required": ["error"], "not": { "required": ["result"] } }
+    },
+    "Event": {
+      "type": "object",
+      "required": ["v", "event", "session", "seq", "time", "source", "data"],
+      "properties": {
+        "v": { "$ref": "#/$defs/Version" },
+        "event": { "type": "string", "pattern": "^[a-z]+\\.[a-zA-Z]+$" },
+        "session": { "type": "string" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "time": { "$ref": "#/$defs/Timestamp" },
+        "source": { "enum": ["agent", "host"] },
+        "data": { "type": "object" }
+      }
+    }
+  }
+}
