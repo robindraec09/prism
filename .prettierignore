@@ -4,6 +4,7 @@ coverage/
 test-results/
 prism-report/
 pnpm-lock.yaml
-# Human-owned documents: never reformat automatically.
-docs/PRD.md
 LICENSE
+# Markdown is not auto-formatted: docs/PRD.md and CLAUDE.md are human-owned,
+# and roadmap/agent files are edited by agents. Revisit with the docs site (P0-14).
+*.md
