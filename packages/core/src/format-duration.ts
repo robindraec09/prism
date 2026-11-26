@@ -8,7 +8,8 @@
  *
  * @param ms - Duration in milliseconds. Must be a finite number, zero or greater.
  * @returns The formatted duration.
- * @throws {RangeError} If `ms` is negative, `NaN` or infinite.
+ * @throws {@link RangeError}
+ * Thrown if `ms` is negative, `NaN` or infinite.
  *
  * @example
  * ```ts
