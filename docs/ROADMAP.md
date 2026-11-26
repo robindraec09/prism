@@ -19,7 +19,7 @@ Estimates assume no AI-agent speed-up; re-estimate at the end of phase 0.
 
 | ID | Task | Requirements | Agent | Depends on | Status |
 | --- | --- | --- | --- | --- | --- |
-| P0-01 | Monorepo tooling: pnpm workspaces, TypeScript strict, ESLint, Prettier, Vitest, CI on Linux/macOS/Windows | — | core-engineer | — | review |
+| P0-01 | Monorepo tooling: pnpm workspaces, TypeScript strict, ESLint, Prettier, Vitest, CI on Linux/macOS/Windows | — | core-engineer | — | done |
 | P0-01a | Commit `pnpm-lock.yaml` and switch CI to `pnpm install --frozen-lockfile` with pnpm caching. **Needs a human** (package installs are blocked in the agents' environment) | — | human | P0-01 | todo |
 | P0-02 | Design note: normalised UI tree and versioned host↔agent JSON protocol (`docs/design/protocol.md`) | CORE-2, AND-2, IOS-1 | core-engineer | — | review |
 | P0-02a | Protocol follow-ups from final review: iOS hit test at the tap point (not `isHittable`); clickable/focusable filter in the Android `within` rule; let `checks.within` take a locator or define the refresh rule; settle before reading in-page rects | CORE-5, HYB-2 | core-engineer | P0-02 | todo |
@@ -48,8 +48,9 @@ Estimates assume no AI-agent speed-up; re-estimate at the end of phase 0.
 ## Needs a human
 
 - [x] Create the GitHub repository and push this starter.
-- [ ] Open and merge the PRs for P0-01 and P0-02 once CI passes.
-- [ ] Review the protocol design (P0-02): confirm decisions D1–D8 and answer the open questions in §14.
+- [x] Merge P0-01 (PR #1).
+- [x] Answer the protocol open questions (recorded in `docs/design/protocol.md` §14).
+- [ ] Open and merge the P0-02 PR.
 - [ ] P0-01a: commit `pnpm-lock.yaml` and switch CI to frozen installs.
 - [ ] Claim the npm organisation `prismtest`.
 - [ ] Register the domain prism.dev (or a fallback such as prismtest.dev).
@@ -62,3 +63,4 @@ Estimates assume no AI-agent speed-up; re-estimate at the end of phase 0.
 | --- | --- |
 | 2026-11-26 | Roadmap created from the PRD. |
 | 2026-11-27 | P0-01 and P0-02 in review (branches pushed, reviewer approved with nits). Added P0-01a, P0-02a, P0-16, P0-17 and backlog item B-01 from review follow-ups. |
+| 2026-11-27 | P0-01 merged (PR #1). Protocol questions answered by the maintainer. |
