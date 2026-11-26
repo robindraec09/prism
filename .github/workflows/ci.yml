@@ -14,10 +14,17 @@ concurrency:
 
 jobs:
   test:
+    name: test (${{ matrix.os }}, node ${{ matrix.node }})
+    timeout-minutes: 15
     strategy:
       fail-fast: false
       matrix:
         os: [ubuntu-latest, macos-latest, windows-latest]
+        node: ['lts/*']
+        # Also test the `engines.node` floor, on Linux only to keep the matrix small.
+        include:
+          - os: ubuntu-latest
+            node: '22.12.0'
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
@@ -25,7 +32,7 @@ jobs:
       - uses: pnpm/action-setup@v4
       - uses: actions/setup-node@v4
         with:
-          node-version: lts/*
+          node-version: ${{ matrix.node }}
       # No lockfile is committed yet. Once a human commits pnpm-lock.yaml, switch to
       # `pnpm install --frozen-lockfile` and add `cache: pnpm` to setup-node.
       - run: pnpm install
