@@ -5,6 +5,13 @@ on:
     branches: [main]
   pull_request:
 
+permissions:
+  contents: read
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
 jobs:
   test:
     strategy:
@@ -14,14 +21,16 @@ jobs:
     runs-on: ${{ matrix.os }}
     steps:
       - uses: actions/checkout@v4
+      # pnpm version comes from the `packageManager` field in package.json.
       - uses: pnpm/action-setup@v4
-        with:
-          version: 9
       - uses: actions/setup-node@v4
         with:
           node-version: lts/*
-      # P0-01: add a lockfile, then switch to `pnpm install --frozen-lockfile` and enable pnpm caching
+      # No lockfile is committed yet. Once a human commits pnpm-lock.yaml, switch to
+      # `pnpm install --frozen-lockfile` and add `cache: pnpm` to setup-node.
       - run: pnpm install
+      - run: pnpm typecheck
       - run: pnpm lint
+      - run: pnpm format:check
       - run: pnpm test
       - run: pnpm build
