@@ -5,7 +5,7 @@
 | Task | P0-02 |
 | Requirements | CORE-2, CORE-3, CORE-4, CORE-5, CORE-9, AND-2, IOS-1, IOS-4, HYB-1, HYB-2, HEAL-1, VIS-1..3, PERF-9 |
 | Protocol version | **1.0.0** (draft: changes before human approval do not bump the version) |
-| Status | Proposed, revision 3 (round-1 and round-2 reviewer findings addressed) |
+| Status | Accepted, revision 3. Reviewer approved; open questions answered by the maintainer on 2026-11-27 (§14) |
 | Machine-readable schema | [`protocol.schema.json`](./protocol.schema.json) (JSON Schema 2020-12) |
 | Consumers | `@prismtest/core`, `web`, `android`, `android-agent`, `ios`, `ios-runner`, `heal`, `visual`, `perf` |
 
@@ -358,7 +358,7 @@ All endpoints require the token (§11).
 ### 4.4 iOS
 
 - **Simulator:** the host launches the runner with `xcodebuild test-without-building`. `xcodebuild` forwards only `TEST_RUNNER_`-prefixed environment variables to the runner (with the prefix stripped), so the host sets `TEST_RUNNER_PRISM_PORT` and `TEST_RUNNER_PRISM_TOKEN`, or writes them into a temporary `.xctestrun` file (mode 0600, deleted after launch). Simulators share the Mac's network stack, so the runner binds `127.0.0.1:<port>` and the host connects directly. Each simulator gets its own port (EMU-4).
-- **Real device (IOS-3, P1):** the host tunnels through usbmux (the usbmuxd socket on macOS), the way `iproxy` does. It is still open whether usbmux reaches a loopback-only listener (§14).
+- **Real device (IOS-3, P1):** the host tunnels through usbmux (the usbmuxd socket on macOS), the way `iproxy` does. Whether usbmux reaches a loopback-only listener is verified in P0-10 (§14).
 
 ### 4.5 Web backends (no agent transport)
 
@@ -601,7 +601,7 @@ With that in place, the agent guarantees:
 4. **No waits beyond what the platform forces:** `element.find` answers with what matches now. Any wait forced by the platform is measured in `timing.implicitWaitMs`.
 5. **Deadline:** the agent answers before `timeoutMs` (subject to §4.2 on iOS); gestures add their `durationMs` to the budget automatically.
 
-The iOS private-API dependency is risk R1 (§13) and an open question (§14).
+The iOS private-API dependency is risk R1 (§13), accepted by the maintainer (§14, Q1).
 
 ### 9.2 Actionability checks (agent, one-shot) — Decision D1
 
@@ -1006,18 +1006,22 @@ The host retries the first until the auto-wait timeout, then raises a test failu
 | R4 | Android unobscured check misses overlays that have no accessibility node | Document; visual diffs and the `system-alert` window check cover the common cases |
 | R5 | Locator semantics drift between the TypeScript, Kotlin and Swift implementations | Shared conformance fixtures (§14) run in all three test suites |
 
-## 14. Open questions for humans
+## 14. Resolved questions
 
-- [ ] **iOS private API (R1).** Do we accept a private XCTest API dependency in the runner (as WebDriverAgent does), with the public-API fallback described in §9.1?
-- [ ] **WebKit Inspector Protocol backend (R3).** Accept a third web backend in phase 2, and require `WKWebView.isInspectable = true` (and `setWebContentsDebuggingEnabled(true)` on Android) from apps under test, documented as a prerequisite for full hybrid support?
-- [ ] **Default device port and package ID.** `io.prismtest.agent` on device port 7100: acceptable, or align with a namespace we own (depends on the domain decision)?
-- [ ] **usbmux and loopback on iOS devices.** Confirm in P0-10 that a usbmux tunnel reaches a runner bound to the device's loopback only. If not, which interface binding is acceptable?
-- [ ] **Agent-side waiting.** v1 keeps all polling on the host. Should a later minor add `element.find { waitMs }` if measured latency misses the budget?
-- [ ] **Multiple displays.** Is "default display only" acceptable for v1 (foldables, Android Auto and casting are excluded), or do we need `displayId` selection via `getWindowsOnAllDisplays` (API 30+)?
-- [ ] **iOS headings.** iOS emits no `heading` role in v1 because traits are not public. Accept this, or read traits through private API (adding to R1)?
-- [ ] **Compose roles.** Compose tabs (and switches without a checkable signal) cannot be identified without localised `roleDescription`. Also, rows using `Modifier.toggleable` arrive as checkable `android.view.View`s, so the "checkable View → `switch`" rule labels a whole settings row as a switch. Accept these gaps, or match `roleDescription` against the device locale's framework strings?
-- [ ] **Role vocabulary.** Is the 36-role list right? `radiogroup`, `tabpanel`, `navigation` and `frame` are left out on purpose (mapped to `group`/`generic`).
-- [ ] **iOS animations and caret for VIS-3.** XCTest cannot disable animations app-wide. Accept best effort, or require an opt-in launch argument that apps under test honour?
-- [ ] **iOS metrics source (PERF-9).** XCTest metrics only work inside measure blocks. Use them, sample from the host (Instruments / `xctrace`), or make iOS metrics P2?
-- [ ] **Cloud farm remote binding.** Farms that allow custom agents but no tunnel need a reachable agent. Allow it behind TLS + token, or require the Appium/WebDriver fallback there (input to P0-11)?
-- [ ] **Conformance fixtures.** Agree that shared test vectors (tree JSON + locator + expected matches, including the normalisation and case-folding cases of §3.4) live in `docs/design/protocol-fixtures/` and run in the Kotlin, Swift and TypeScript suites.
+Answered by the maintainer on 2026-11-27.
+
+| # | Question | Answer |
+| --- | --- | --- |
+| Q1 | iOS private XCTest API (R1) | **Accepted**, with the public-API fallback of §9.1 and `timing.implicitWaitMs` reporting. Private calls stay isolated in one Swift file. |
+| Q2 | WebKit Inspector Protocol backend (R3) and WebView debugging requirement | **Accepted.** Phase-2 backend (roadmap B-01). Apps under test must set `WKWebView.isInspectable = true` (iOS) and `WebView.setWebContentsDebuggingEnabled(true)` (Android) in test builds; documented as a prerequisite for full hybrid support. |
+| Q3 | Device port and package ID | **Accepted:** `io.prismtest.agent` on device port 7100 (matches the `prismtest` npm scope). |
+| Q4 | usbmux and loopback on iOS devices | **To verify in P0-10.** If loopback-only binding is not reachable, P0-10 proposes the narrowest alternative for approval. |
+| Q5 | Agent-side waiting (`element.find { waitMs }`) | **Not in v1.** Revisit in a later minor version only if measured latency misses the budget (§9.5). |
+| Q6 | Multiple displays | **Default display only in v1.** `displayId` selection is a later enhancement. |
+| Q7 | iOS headings | **No `heading` role on iOS in v1**; traits stay unread (R1 does not grow). |
+| Q8 | Compose roles | **Accept the gaps in v1.** No matching of localised `roleDescription`; toggleable rows may map to `switch`. Documented as a known limitation. |
+| Q9 | Role vocabulary | **Accepted as listed** (36 roles). |
+| Q10 | iOS animations and caret (VIS-3) | **Best effort**, plus an optional launch argument that apps under test may honour for fully stable screenshots. |
+| Q11 | iOS metrics source (PERF-9) | **Host-side sampling (Instruments / `xctrace`)**, evaluated in phase 3. PERF-9 is P1, so this does not block v1. |
+| Q12 | Cloud farms without a tunnel | **Use the Appium/WebDriver compatibility fallback**; no remote agent binding. Input to P0-11. |
+| Q13 | Conformance fixtures | **Accepted:** shared test vectors in `docs/design/protocol-fixtures/`, run in the Kotlin, Swift and TypeScript suites (R5). |
