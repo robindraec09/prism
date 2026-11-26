@@ -1,0 +1,9 @@
+node_modules/
+dist/
+coverage/
+test-results/
+prism-report/
+pnpm-lock.yaml
+# Human-owned documents: never reformat automatically.
+docs/PRD.md
+LICENSE
