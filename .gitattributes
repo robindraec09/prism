@@ -3,3 +3,5 @@
 *.png binary
 *.jpg binary
 *.apk binary
+*.bat text eol=crlf
+*.jar binary
