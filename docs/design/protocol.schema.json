@@ -22,10 +22,42 @@
 
     "KnownRole": {
       "enum": [
-        "screen", "application", "window", "document", "webview", "dialog", "alert", "keyboard", "generic", "group", "toolbar",
-        "list", "listitem", "grid", "row", "cell", "tablist", "tab", "menu", "menuitem", "listbox", "option",
-        "button", "link", "textbox", "searchbox", "checkbox", "radio", "switch", "slider", "spinbutton", "combobox", "progressbar",
-        "text", "heading", "image"
+        "screen",
+        "application",
+        "window",
+        "document",
+        "webview",
+        "dialog",
+        "alert",
+        "keyboard",
+        "generic",
+        "group",
+        "toolbar",
+        "list",
+        "listitem",
+        "grid",
+        "row",
+        "cell",
+        "tablist",
+        "tab",
+        "menu",
+        "menuitem",
+        "listbox",
+        "option",
+        "button",
+        "link",
+        "textbox",
+        "searchbox",
+        "checkbox",
+        "radio",
+        "switch",
+        "slider",
+        "spinbutton",
+        "combobox",
+        "progressbar",
+        "text",
+        "heading",
+        "image"
       ]
     },
     "KnownPlatform": { "enum": ["android", "ios", "web"] },
@@ -35,16 +67,39 @@
     "KnownNativeEngine": { "enum": ["uiautomator", "nspredicate", "classchain"] },
     "KnownErrorCode": {
       "enum": [
-        "invalid-request", "unknown-command", "unsupported", "unauthorized", "version-mismatch",
-        "session-not-found", "session-active", "busy", "cancelled", "element-not-found", "ambiguous",
-        "stale-node", "stale-snapshot", "not-interactable", "context-not-found", "timeout",
-        "app-not-running", "app-crashed", "agent-crashed", "internal"
+        "invalid-request",
+        "unknown-command",
+        "unsupported",
+        "unauthorized",
+        "version-mismatch",
+        "session-not-found",
+        "session-active",
+        "busy",
+        "cancelled",
+        "element-not-found",
+        "ambiguous",
+        "stale-node",
+        "stale-snapshot",
+        "not-interactable",
+        "context-not-found",
+        "timeout",
+        "app-not-running",
+        "app-crashed",
+        "agent-crashed",
+        "internal"
       ]
     },
     "KnownNotInteractableReason": {
       "enum": [
-        "not-visible", "off-screen", "disabled", "obscured", "unstable", "zero-size",
-        "keyboard-covering", "keyboard-unavailable", "system-alert"
+        "not-visible",
+        "off-screen",
+        "disabled",
+        "obscured",
+        "unstable",
+        "zero-size",
+        "keyboard-covering",
+        "keyboard-unavailable",
+        "system-alert"
       ]
     },
 
@@ -74,7 +129,10 @@
         "left": { "type": "number" }
       }
     },
-    "Rotation": { "enum": [0, 90, 180, 270], "description": "Degrees the UI is rotated clockwise from the device's natural orientation." },
+    "Rotation": {
+      "enum": [0, 90, 180, 270],
+      "description": "Degrees the UI is rotated clockwise from the device's natural orientation."
+    },
     "Screen": {
       "type": "object",
       "required": ["width", "height", "scale", "rotation", "orientation"],
@@ -83,7 +141,10 @@
         "height": { "type": "number" },
         "scale": { "type": "number", "exclusiveMinimum": 0 },
         "rotation": { "$ref": "#/$defs/Rotation" },
-        "orientation": { "type": "string", "description": "Derived from width vs height. Known values: KnownOrientation." },
+        "orientation": {
+          "type": "string",
+          "description": "Derived from width vs height. Known values: KnownOrientation."
+        },
         "insets": { "$ref": "#/$defs/Insets" }
       }
     },
@@ -93,13 +154,32 @@
       "type": "object",
       "description": "All node fields except children. Used directly in find matches (with childCount).",
       "required": [
-        "id", "role", "name", "text", "value", "testId", "nativeType", "bounds",
-        "visible", "onScreen", "enabled", "focused", "selected", "checked",
-        "scrollable", "password", "webContent", "context"
+        "id",
+        "role",
+        "name",
+        "text",
+        "value",
+        "testId",
+        "nativeType",
+        "bounds",
+        "visible",
+        "onScreen",
+        "enabled",
+        "focused",
+        "selected",
+        "checked",
+        "scrollable",
+        "password",
+        "webContent",
+        "context"
       ],
       "properties": {
         "id": { "type": "string", "minLength": 1 },
-        "role": { "type": "string", "minLength": 1, "description": "Open string; known values: KnownRole. Consumers treat unknown roles as 'generic'." },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Open string; known values: KnownRole. Consumers treat unknown roles as 'generic'."
+        },
         "name": { "$ref": "#/$defs/NullableString" },
         "text": { "$ref": "#/$defs/NullableString" },
         "value": { "$ref": "#/$defs/NullableString" },
@@ -115,7 +195,10 @@
         "checked": { "enum": [true, false, "mixed", null] },
         "expanded": { "type": ["boolean", "null"] },
         "scrollable": { "type": "boolean" },
-        "password": { "type": "boolean", "description": "When true, value and text are null and raw has no value/text keys; raw.label is allowed (iOS field label)." },
+        "password": {
+          "type": "boolean",
+          "description": "When true, value and text are null and raw has no value/text keys; raw.label is allowed (iOS field label)."
+        },
         "webContent": { "type": "boolean" },
         "level": { "type": "integer", "minimum": 1 },
         "context": { "type": "string", "pattern": "^(native|web:[^/]+(/.+)?)$" },
@@ -149,13 +232,27 @@
     "Settle": {
       "type": "object",
       "required": ["maxWaitMs"],
-      "properties": { "maxWaitMs": { "type": "integer", "minimum": 0 }, "quietMs": { "type": "integer", "minimum": 0 } }
+      "properties": {
+        "maxWaitMs": { "type": "integer", "minimum": 0 },
+        "quietMs": { "type": "integer", "minimum": 0 }
+      }
     },
     "Snapshot": {
       "type": "object",
-      "required": ["snapshotId", "capturedAt", "platform", "screen", "root", "nodeCount", "truncated"],
+      "required": [
+        "snapshotId",
+        "capturedAt",
+        "platform",
+        "screen",
+        "root",
+        "nodeCount",
+        "truncated"
+      ],
       "properties": {
-        "snapshotId": { "$ref": "#/$defs/InstanceScopedId", "description": "Agents and the web driver both use <instanceId>.<local id>." },
+        "snapshotId": {
+          "$ref": "#/$defs/InstanceScopedId",
+          "description": "Agents and the web driver both use <instanceId>.<local id>."
+        },
         "capturedAt": { "$ref": "#/$defs/Timestamp" },
         "platform": { "type": "string", "description": "Known values: KnownPlatform." },
         "screen": { "$ref": "#/$defs/Screen" },
@@ -173,8 +270,18 @@
     },
     "TextMatch": {
       "oneOf": [
-        { "type": "object", "required": ["text"], "properties": { "text": { "type": "string" }, "exact": { "type": "boolean" } }, "not": { "required": ["regex"] } },
-        { "type": "object", "required": ["regex"], "properties": { "regex": { "$ref": "#/$defs/Regex" } }, "not": { "required": ["text"] } }
+        {
+          "type": "object",
+          "required": ["text"],
+          "properties": { "text": { "type": "string" }, "exact": { "type": "boolean" } },
+          "not": { "required": ["regex"] }
+        },
+        {
+          "type": "object",
+          "required": ["regex"],
+          "properties": { "regex": { "$ref": "#/$defs/Regex" } },
+          "not": { "required": ["text"] }
+        }
       ]
     },
     "LocatorCommon": {
@@ -200,7 +307,11 @@
         {
           "type": "object",
           "required": ["role"],
-          "properties": { "kind": { "const": "role" }, "role": { "type": "string" }, "name": { "$ref": "#/$defs/TextMatch" } }
+          "properties": {
+            "kind": { "const": "role" },
+            "role": { "type": "string" },
+            "name": { "$ref": "#/$defs/TextMatch" }
+          }
         },
         {
           "allOf": [{ "$ref": "#/$defs/TextMatch" }],
@@ -209,7 +320,10 @@
         {
           "type": "object",
           "required": ["value"],
-          "properties": { "kind": { "const": "testId" }, "value": { "type": "string", "minLength": 1 } }
+          "properties": {
+            "kind": { "const": "testId" },
+            "value": { "type": "string", "minLength": 1 }
+          }
         },
         {
           "type": "object",
@@ -257,7 +371,12 @@
             "ios": { "$ref": "#/$defs/Locator" },
             "default": { "$ref": "#/$defs/Locator" }
           },
-          "anyOf": [{ "required": ["web"] }, { "required": ["android"] }, { "required": ["ios"] }, { "required": ["default"] }]
+          "anyOf": [
+            { "required": ["web"] },
+            { "required": ["android"] },
+            { "required": ["ios"] },
+            { "required": ["default"] }
+          ]
         }
       ]
     },
@@ -265,13 +384,28 @@
     "NodeRef": {
       "type": "object",
       "required": ["snapshotId", "nodeId"],
-      "properties": { "snapshotId": { "$ref": "#/$defs/InstanceScopedId" }, "nodeId": { "type": "string" } }
+      "properties": {
+        "snapshotId": { "$ref": "#/$defs/InstanceScopedId" },
+        "nodeId": { "type": "string" }
+      }
     },
     "Target": {
       "oneOf": [
-        { "type": "object", "required": ["node"], "properties": { "node": { "$ref": "#/$defs/NodeRef" } } },
-        { "type": "object", "required": ["locator"], "properties": { "locator": { "$ref": "#/$defs/Locator" } } },
-        { "type": "object", "required": ["point"], "properties": { "point": { "$ref": "#/$defs/Point" } } }
+        {
+          "type": "object",
+          "required": ["node"],
+          "properties": { "node": { "$ref": "#/$defs/NodeRef" } }
+        },
+        {
+          "type": "object",
+          "required": ["locator"],
+          "properties": { "locator": { "$ref": "#/$defs/Locator" } }
+        },
+        {
+          "type": "object",
+          "required": ["point"],
+          "properties": { "point": { "$ref": "#/$defs/Point" } }
+        }
       ]
     },
     "Checks": {
@@ -306,7 +440,11 @@
           "not": { "required": ["children"] }
         },
         "path": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
-        "siblingCount": { "type": "integer", "minimum": 1, "description": "Children of the parent, including this node." },
+        "siblingCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Children of the parent, including this node."
+        },
         "ancestors": { "type": "array", "items": { "$ref": "#/$defs/Ancestor" } }
       }
     },
@@ -411,8 +549,14 @@
         "osVersion": { "type": "string" },
         "apiLevel": { "type": "integer" },
         "model": { "type": "string" },
-        "serial": { "type": "string", "description": "Filled by the host from adb; agents omit it." },
-        "udid": { "type": "string", "description": "Filled by the host from simctl/devicectl; agents omit it." },
+        "serial": {
+          "type": "string",
+          "description": "Filled by the host from adb; agents omit it."
+        },
+        "udid": {
+          "type": "string",
+          "description": "Filled by the host from simctl/devicectl; agents omit it."
+        },
         "emulator": { "type": "boolean" },
         "screen": { "$ref": "#/$defs/Screen" },
         "locale": { "type": "string" },
@@ -423,7 +567,10 @@
       "description": "Body of the unversioned GET /version.",
       "type": "object",
       "required": ["protocol", "agent"],
-      "properties": { "protocol": { "$ref": "#/$defs/ProtocolRange" }, "agent": { "$ref": "#/$defs/AgentInfo" } }
+      "properties": {
+        "protocol": { "$ref": "#/$defs/ProtocolRange" },
+        "agent": { "$ref": "#/$defs/AgentInfo" }
+      }
     },
     "HealthBody": {
       "description": "Body of GET /v1/health.",
@@ -440,7 +587,11 @@
             {
               "type": "object",
               "required": ["id", "cmd", "forMs"],
-              "properties": { "id": { "type": "string" }, "cmd": { "type": "string" }, "forMs": { "type": "number", "minimum": 0 } }
+              "properties": {
+                "id": { "type": "string" },
+                "cmd": { "type": "string" },
+                "forMs": { "type": "number", "minimum": 0 }
+              }
             }
           ]
         }
@@ -451,7 +602,11 @@
       "type": "object",
       "required": ["code", "message", "retryable"],
       "properties": {
-        "code": { "type": "string", "pattern": "^[a-z]+(-[a-z]+)*$", "description": "Open string; known values: KnownErrorCode." },
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z]+(-[a-z]+)*$",
+          "description": "Open string; known values: KnownErrorCode."
+        },
         "message": { "type": "string", "minLength": 1 },
         "retryable": { "type": "boolean" },
         "details": { "type": "object" }
@@ -471,7 +626,11 @@
       },
       "allOf": [
         {
-          "if": { "properties": { "cmd": { "not": { "enum": ["hello", "session.start", "device.info"] } } } },
+          "if": {
+            "properties": {
+              "cmd": { "not": { "enum": ["hello", "session.start", "device.info"] } }
+            }
+          },
           "then": { "required": ["session"] }
         },
         {
@@ -516,7 +675,11 @@
           }
         },
         {
-          "if": { "properties": { "cmd": { "pattern": "^action\\.(tap|doubleTap|longPress|clear|setValue)$" } } },
+          "if": {
+            "properties": {
+              "cmd": { "pattern": "^action\\.(tap|doubleTap|longPress|clear|setValue)$" }
+            }
+          },
           "then": {
             "properties": {
               "params": {
@@ -542,7 +705,10 @@
                 "properties": {
                   "target": { "$ref": "#/$defs/Target" },
                   "text": { "type": "string" },
-                  "mode": { "type": "string", "description": "append | replace; other values give invalid-request" },
+                  "mode": {
+                    "type": "string",
+                    "description": "append | replace; other values give invalid-request"
+                  },
                   "secret": { "type": "boolean" },
                   "checks": { "$ref": "#/$defs/Checks" },
                   "settle": { "$ref": "#/$defs/Settle" }
@@ -555,7 +721,11 @@
           "if": { "properties": { "cmd": { "const": "action.setValue" } } },
           "then": {
             "properties": {
-              "params": { "type": "object", "required": ["value"], "properties": { "value": { "type": ["number", "string"] } } }
+              "params": {
+                "type": "object",
+                "required": ["value"],
+                "properties": { "value": { "type": ["number", "string"] } }
+              }
             }
           }
         },
@@ -566,7 +736,10 @@
               "params": {
                 "type": "object",
                 "required": ["target"],
-                "properties": { "target": { "$ref": "#/$defs/Target" }, "maxSwipes": { "type": "integer", "minimum": 1 } }
+                "properties": {
+                  "target": { "$ref": "#/$defs/Target" },
+                  "maxSwipes": { "type": "integer", "minimum": 1 }
+                }
               }
             }
           }
