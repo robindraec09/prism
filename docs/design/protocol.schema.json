@@ -1,0 +1,820 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "urn:prismtest:protocol:1.0.0",
+  "title": "Prism host-agent protocol 1.0.0",
+  "description": "Normalised UI tree, locator AST, message envelope, events and frames. Normative text: docs/design/protocol.md. Wire types are open: receivers ignore unknown fields and accept unknown enumerated strings (protocol.md section 5.2). The Known* definitions list the values defined in 1.0; producer conformance tests check against them for the negotiated version.",
+  "oneOf": [
+    { "$ref": "#/$defs/Request" },
+    { "$ref": "#/$defs/Response" },
+    { "$ref": "#/$defs/Event" },
+    { "$ref": "#/$defs/ResumeFrame" },
+    { "$ref": "#/$defs/GapFrame" }
+  ],
+  "$defs": {
+    "Version": { "type": "string", "pattern": "^[0-9]+\\.[0-9]+$", "description": "MAJOR.MINOR" },
+    "Timestamp": { "type": "string", "format": "date-time" },
+    "InstanceScopedId": {
+      "type": "string",
+      "pattern": "^[a-z2-7]{8}\\.[A-Za-z0-9_-]+$",
+      "description": "<instanceId>.<local id>, for snapshot and session IDs"
+    },
+    "InstanceId": { "type": "string", "pattern": "^[a-z2-7]{8}$" },
+
+    "KnownRole": {
+      "enum": [
+        "screen",
+        "application",
+        "window",
+        "document",
+        "webview",
+        "dialog",
+        "alert",
+        "keyboard",
+        "generic",
+        "group",
+        "toolbar",
+        "list",
+        "listitem",
+        "grid",
+        "row",
+        "cell",
+        "tablist",
+        "tab",
+        "menu",
+        "menuitem",
+        "listbox",
+        "option",
+        "button",
+        "link",
+        "textbox",
+        "searchbox",
+        "checkbox",
+        "radio",
+        "switch",
+        "slider",
+        "spinbutton",
+        "combobox",
+        "progressbar",
+        "text",
+        "heading",
+        "image"
+      ]
+    },
+    "KnownPlatform": { "enum": ["android", "ios", "web"] },
+    "KnownOrientation": { "enum": ["portrait", "landscape"] },
+    "KnownImageFormat": { "enum": ["png", "jpeg"] },
+    "KnownEventSource": { "enum": ["agent", "host"] },
+    "KnownNativeEngine": { "enum": ["uiautomator", "nspredicate", "classchain"] },
+    "KnownErrorCode": {
+      "enum": [
+        "invalid-request",
+        "unknown-command",
+        "unsupported",
+        "unauthorized",
+        "version-mismatch",
+        "session-not-found",
+        "session-active",
+        "busy",
+        "cancelled",
+        "element-not-found",
+        "ambiguous",
+        "stale-node",
+        "stale-snapshot",
+        "not-interactable",
+        "context-not-found",
+        "timeout",
+        "app-not-running",
+        "app-crashed",
+        "agent-crashed",
+        "internal"
+      ]
+    },
+    "KnownNotInteractableReason": {
+      "enum": [
+        "not-visible",
+        "off-screen",
+        "disabled",
+        "obscured",
+        "unstable",
+        "zero-size",
+        "keyboard-covering",
+        "keyboard-unavailable",
+        "system-alert"
+      ]
+    },
+
+    "Point": {
+      "type": "object",
+      "required": ["x", "y"],
+      "properties": { "x": { "type": "number" }, "y": { "type": "number" } }
+    },
+    "Rect": {
+      "type": "object",
+      "description": "Device-independent pixels, origin top-left of the screen as currently drawn.",
+      "required": ["x", "y", "width", "height"],
+      "properties": {
+        "x": { "type": "number" },
+        "y": { "type": "number" },
+        "width": { "type": "number", "minimum": 0 },
+        "height": { "type": "number", "minimum": 0 }
+      }
+    },
+    "Insets": {
+      "type": "object",
+      "required": ["top", "right", "bottom", "left"],
+      "properties": {
+        "top": { "type": "number" },
+        "right": { "type": "number" },
+        "bottom": { "type": "number" },
+        "left": { "type": "number" }
+      }
+    },
+    "Rotation": {
+      "enum": [0, 90, 180, 270],
+      "description": "Degrees the UI is rotated clockwise from the device's natural orientation."
+    },
+    "Screen": {
+      "type": "object",
+      "required": ["width", "height", "scale", "rotation", "orientation"],
+      "properties": {
+        "width": { "type": "number" },
+        "height": { "type": "number" },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
+        "rotation": { "$ref": "#/$defs/Rotation" },
+        "orientation": {
+          "type": "string",
+          "description": "Derived from width vs height. Known values: KnownOrientation."
+        },
+        "insets": { "$ref": "#/$defs/Insets" }
+      }
+    },
+    "NullableString": { "type": ["string", "null"] },
+
+    "NodeBase": {
+      "type": "object",
+      "description": "All node fields except children. Used directly in find matches (with childCount).",
+      "required": [
+        "id",
+        "role",
+        "name",
+        "text",
+        "value",
+        "testId",
+        "nativeType",
+        "bounds",
+        "visible",
+        "onScreen",
+        "enabled",
+        "focused",
+        "selected",
+        "checked",
+        "scrollable",
+        "password",
+        "webContent",
+        "context"
+      ],
+      "properties": {
+        "id": { "type": "string", "minLength": 1 },
+        "role": {
+          "type": "string",
+          "minLength": 1,
+          "description": "Open string; known values: KnownRole. Consumers treat unknown roles as 'generic'."
+        },
+        "name": { "$ref": "#/$defs/NullableString" },
+        "text": { "$ref": "#/$defs/NullableString" },
+        "value": { "$ref": "#/$defs/NullableString" },
+        "hint": { "$ref": "#/$defs/NullableString" },
+        "testId": { "type": ["string", "null"], "minLength": 1 },
+        "nativeType": { "type": "string" },
+        "bounds": { "$ref": "#/$defs/Rect" },
+        "visible": { "type": "boolean" },
+        "onScreen": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "focused": { "type": "boolean" },
+        "selected": { "type": "boolean" },
+        "checked": { "enum": [true, false, "mixed", null] },
+        "expanded": { "type": ["boolean", "null"] },
+        "scrollable": { "type": "boolean" },
+        "password": {
+          "type": "boolean",
+          "description": "When true, value and text are null and raw has no value/text keys; raw.label is allowed (iOS field label)."
+        },
+        "webContent": { "type": "boolean" },
+        "level": { "type": "integer", "minimum": 1 },
+        "context": { "type": "string", "pattern": "^(native|web:[^/]+(/.+)?)$" },
+        "childCount": { "type": "integer", "minimum": 0 },
+        "raw": { "type": "object" }
+      },
+      "if": { "properties": { "password": { "const": true } }, "required": ["password"] },
+      "then": {
+        "properties": {
+          "value": { "type": "null" },
+          "text": { "type": "null" },
+          "raw": { "not": { "anyOf": [{ "required": ["value"] }, { "required": ["text"] }] } }
+        }
+      }
+    },
+    "Node": {
+      "allOf": [{ "$ref": "#/$defs/NodeBase" }],
+      "type": "object",
+      "required": ["children"],
+      "properties": { "children": { "type": "array", "items": { "$ref": "#/$defs/Node" } } }
+    },
+    "Idle": {
+      "type": "object",
+      "required": ["settled", "waitedMs"],
+      "properties": {
+        "settled": { "type": "boolean" },
+        "waitedMs": { "type": "number", "minimum": 0 },
+        "animating": { "type": "boolean" }
+      }
+    },
+    "Settle": {
+      "type": "object",
+      "required": ["maxWaitMs"],
+      "properties": {
+        "maxWaitMs": { "type": "integer", "minimum": 0 },
+        "quietMs": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Snapshot": {
+      "type": "object",
+      "required": [
+        "snapshotId",
+        "capturedAt",
+        "platform",
+        "screen",
+        "root",
+        "nodeCount",
+        "truncated"
+      ],
+      "properties": {
+        "snapshotId": {
+          "$ref": "#/$defs/InstanceScopedId",
+          "description": "Agents and the web driver both use <instanceId>.<local id>."
+        },
+        "capturedAt": { "$ref": "#/$defs/Timestamp" },
+        "platform": { "type": "string", "description": "Known values: KnownPlatform." },
+        "screen": { "$ref": "#/$defs/Screen" },
+        "idle": { "$ref": "#/$defs/Idle" },
+        "root": { "$ref": "#/$defs/Node" },
+        "nodeCount": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" }
+      }
+    },
+
+    "Regex": {
+      "type": "object",
+      "required": ["source"],
+      "properties": { "source": { "type": "string" }, "flags": { "enum": ["", "i"] } }
+    },
+    "TextMatch": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["text"],
+          "properties": { "text": { "type": "string" }, "exact": { "type": "boolean" } },
+          "not": { "required": ["regex"] }
+        },
+        {
+          "type": "object",
+          "required": ["regex"],
+          "properties": { "regex": { "$ref": "#/$defs/Regex" } },
+          "not": { "required": ["text"] }
+        }
+      ]
+    },
+    "LocatorCommon": {
+      "type": "object",
+      "required": ["kind"],
+      "properties": {
+        "kind": { "type": "string" },
+        "nth": { "type": "integer" },
+        "includeWebContent": { "type": "boolean" },
+        "filter": {
+          "type": "object",
+          "properties": {
+            "visible": { "type": "boolean" },
+            "enabled": { "type": "boolean" },
+            "onScreen": { "type": "boolean" }
+          }
+        }
+      }
+    },
+    "Locator": {
+      "allOf": [{ "$ref": "#/$defs/LocatorCommon" }],
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["role"],
+          "properties": {
+            "kind": { "const": "role" },
+            "role": { "type": "string" },
+            "name": { "$ref": "#/$defs/TextMatch" }
+          }
+        },
+        {
+          "allOf": [{ "$ref": "#/$defs/TextMatch" }],
+          "properties": { "kind": { "enum": ["text", "label"] } }
+        },
+        {
+          "type": "object",
+          "required": ["value"],
+          "properties": {
+            "kind": { "const": "testId" },
+            "value": { "type": "string", "minLength": 1 }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["selector"],
+          "properties": { "kind": { "const": "css" }, "selector": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["expr"],
+          "properties": { "kind": { "const": "xpath" }, "expr": { "type": "string" } }
+        },
+        {
+          "type": "object",
+          "required": ["engine", "query"],
+          "properties": {
+            "kind": { "const": "native" },
+            "engine": { "type": "string", "description": "Known values: KnownNativeEngine." },
+            "query": { "type": "string" }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["of"],
+          "properties": {
+            "kind": { "enum": ["and", "or"] },
+            "of": { "type": "array", "minItems": 1, "items": { "$ref": "#/$defs/Locator" } }
+          }
+        },
+        {
+          "type": "object",
+          "required": ["scope", "target"],
+          "properties": {
+            "kind": { "const": "within" },
+            "scope": { "$ref": "#/$defs/Locator" },
+            "target": { "$ref": "#/$defs/Locator" }
+          }
+        },
+        {
+          "type": "object",
+          "description": "Host-only. Agents never receive this kind.",
+          "properties": {
+            "kind": { "const": "platform" },
+            "web": { "$ref": "#/$defs/Locator" },
+            "android": { "$ref": "#/$defs/Locator" },
+            "ios": { "$ref": "#/$defs/Locator" },
+            "default": { "$ref": "#/$defs/Locator" }
+          },
+          "anyOf": [
+            { "required": ["web"] },
+            { "required": ["android"] },
+            { "required": ["ios"] },
+            { "required": ["default"] }
+          ]
+        }
+      ]
+    },
+
+    "NodeRef": {
+      "type": "object",
+      "required": ["snapshotId", "nodeId"],
+      "properties": {
+        "snapshotId": { "$ref": "#/$defs/InstanceScopedId" },
+        "nodeId": { "type": "string" }
+      }
+    },
+    "Target": {
+      "oneOf": [
+        {
+          "type": "object",
+          "required": ["node"],
+          "properties": { "node": { "$ref": "#/$defs/NodeRef" } }
+        },
+        {
+          "type": "object",
+          "required": ["locator"],
+          "properties": { "locator": { "$ref": "#/$defs/Locator" } }
+        },
+        {
+          "type": "object",
+          "required": ["point"],
+          "properties": { "point": { "$ref": "#/$defs/Point" } }
+        }
+      ]
+    },
+    "Checks": {
+      "type": "object",
+      "properties": {
+        "visible": { "type": "boolean" },
+        "enabled": { "type": "boolean" },
+        "onScreen": { "type": "boolean" },
+        "unobscured": { "type": "boolean" },
+        "stableMs": { "type": "integer", "minimum": 0 },
+        "within": { "$ref": "#/$defs/NodeRef" }
+      }
+    },
+    "Ancestor": {
+      "type": "object",
+      "required": ["role", "nativeType", "index"],
+      "properties": {
+        "role": { "type": "string" },
+        "nativeType": { "type": "string" },
+        "testId": { "$ref": "#/$defs/NullableString" },
+        "name": { "$ref": "#/$defs/NullableString" },
+        "index": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "Match": {
+      "type": "object",
+      "required": ["node", "path", "siblingCount"],
+      "properties": {
+        "node": {
+          "allOf": [{ "$ref": "#/$defs/NodeBase" }],
+          "required": ["childCount"],
+          "not": { "required": ["children"] }
+        },
+        "path": { "type": "array", "items": { "type": "integer", "minimum": 0 } },
+        "siblingCount": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Children of the parent, including this node."
+        },
+        "ancestors": { "type": "array", "items": { "$ref": "#/$defs/Ancestor" } }
+      }
+    },
+    "FindResult": {
+      "type": "object",
+      "required": ["snapshotId", "matches", "total", "truncated", "searched"],
+      "properties": {
+        "snapshotId": { "$ref": "#/$defs/InstanceScopedId" },
+        "matches": { "type": "array", "items": { "$ref": "#/$defs/Match" } },
+        "total": { "type": "integer", "minimum": 0 },
+        "truncated": { "type": "boolean" },
+        "searched": { "type": "integer", "minimum": 0 },
+        "idle": { "$ref": "#/$defs/Idle" }
+      }
+    },
+    "ActionResult": {
+      "type": "object",
+      "required": ["at", "durationMs"],
+      "properties": {
+        "at": { "$ref": "#/$defs/Point" },
+        "durationMs": { "type": "number", "minimum": 0 },
+        "match": { "$ref": "#/$defs/Match" },
+        "actedOn": {
+          "type": "object",
+          "description": "Retargeted actionable ancestor (protocol.md 9.2), when it differs from match.",
+          "required": ["nodeId", "role", "nativeType", "path"],
+          "properties": {
+            "nodeId": { "type": "string" },
+            "role": { "type": "string" },
+            "nativeType": { "type": "string" },
+            "path": { "type": "array", "items": { "type": "integer", "minimum": 0 } }
+          }
+        },
+        "idle": { "$ref": "#/$defs/Idle" },
+        "method": { "type": "string", "description": "action.type only: keys | setText | typeText" }
+      }
+    },
+    "Screenshot": {
+      "type": "object",
+      "required": ["format", "width", "height", "scale", "rotation", "capturedAt"],
+      "properties": {
+        "format": { "type": "string", "description": "Known values: KnownImageFormat." },
+        "width": { "type": "integer", "minimum": 1 },
+        "height": { "type": "integer", "minimum": 1 },
+        "scale": { "type": "number", "exclusiveMinimum": 0 },
+        "rotation": { "$ref": "#/$defs/Rotation" },
+        "region": { "$ref": "#/$defs/Rect" },
+        "data": { "type": "string", "contentEncoding": "base64" },
+        "artifactId": { "type": "string" },
+        "capturedAt": { "$ref": "#/$defs/Timestamp" }
+      },
+      "oneOf": [{ "required": ["data"] }, { "required": ["artifactId"] }]
+    },
+
+    "ProtocolRange": {
+      "type": "object",
+      "required": ["min", "max"],
+      "properties": { "min": { "$ref": "#/$defs/Version" }, "max": { "$ref": "#/$defs/Version" } }
+    },
+    "AgentInfo": {
+      "type": "object",
+      "required": ["name", "version", "instanceId"],
+      "properties": {
+        "name": { "type": "string" },
+        "version": { "type": "string" },
+        "platform": { "type": "string" },
+        "instanceId": { "$ref": "#/$defs/InstanceId" }
+      }
+    },
+    "HelloParams": {
+      "type": "object",
+      "required": ["client", "protocol"],
+      "properties": {
+        "client": {
+          "type": "object",
+          "required": ["name", "version"],
+          "properties": { "name": { "type": "string" }, "version": { "type": "string" } }
+        },
+        "protocol": { "$ref": "#/$defs/ProtocolRange" },
+        "want": { "type": "array", "items": { "type": "string" } }
+      }
+    },
+    "HelloResult": {
+      "type": "object",
+      "required": ["protocol", "agent", "capabilities", "device"],
+      "properties": {
+        "protocol": {
+          "allOf": [{ "$ref": "#/$defs/ProtocolRange" }],
+          "required": ["selected"],
+          "properties": { "selected": { "$ref": "#/$defs/Version" } }
+        },
+        "agent": { "allOf": [{ "$ref": "#/$defs/AgentInfo" }], "required": ["platform"] },
+        "capabilities": { "type": "array", "items": { "type": "string" }, "uniqueItems": true },
+        "device": { "$ref": "#/$defs/DeviceInfo" }
+      }
+    },
+    "DeviceInfo": {
+      "type": "object",
+      "required": ["platform", "osVersion", "model", "emulator", "screen"],
+      "properties": {
+        "platform": { "type": "string" },
+        "osVersion": { "type": "string" },
+        "apiLevel": { "type": "integer" },
+        "model": { "type": "string" },
+        "serial": {
+          "type": "string",
+          "description": "Filled by the host from adb; agents omit it."
+        },
+        "udid": {
+          "type": "string",
+          "description": "Filled by the host from simctl/devicectl; agents omit it."
+        },
+        "emulator": { "type": "boolean" },
+        "screen": { "$ref": "#/$defs/Screen" },
+        "locale": { "type": "string" },
+        "timeZone": { "type": "string" }
+      }
+    },
+    "VersionBody": {
+      "description": "Body of the unversioned GET /version.",
+      "type": "object",
+      "required": ["protocol", "agent"],
+      "properties": {
+        "protocol": { "$ref": "#/$defs/ProtocolRange" },
+        "agent": { "$ref": "#/$defs/AgentInfo" }
+      }
+    },
+    "HealthBody": {
+      "description": "Body of GET /v1/health.",
+      "type": "object",
+      "required": ["ok", "instanceId", "uptimeMs", "session", "running"],
+      "properties": {
+        "ok": { "type": "boolean" },
+        "instanceId": { "$ref": "#/$defs/InstanceId" },
+        "uptimeMs": { "type": "number", "minimum": 0 },
+        "session": { "oneOf": [{ "type": "null" }, { "$ref": "#/$defs/InstanceScopedId" }] },
+        "running": {
+          "oneOf": [
+            { "type": "null" },
+            {
+              "type": "object",
+              "required": ["id", "cmd", "forMs"],
+              "properties": {
+                "id": { "type": "string" },
+                "cmd": { "type": "string" },
+                "forMs": { "type": "number", "minimum": 0 }
+              }
+            }
+          ]
+        }
+      }
+    },
+
+    "Error": {
+      "type": "object",
+      "required": ["code", "message", "retryable"],
+      "properties": {
+        "code": {
+          "type": "string",
+          "pattern": "^[a-z]+(-[a-z]+)*$",
+          "description": "Open string; known values: KnownErrorCode."
+        },
+        "message": { "type": "string", "minLength": 1 },
+        "retryable": { "type": "boolean" },
+        "details": { "type": "object" }
+      }
+    },
+    "Request": {
+      "description": "Unknown parameter names are ignored; an unknown value for a known parameter, or a missing required parameter, gives invalid-request (protocol.md 5.2).",
+      "type": "object",
+      "required": ["v", "id", "cmd", "params"],
+      "properties": {
+        "v": { "$ref": "#/$defs/Version" },
+        "id": { "type": "string", "minLength": 1 },
+        "cmd": { "type": "string", "pattern": "^(hello|[a-z]+\\.[a-zA-Z]+)$" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
+        "params": { "type": "object" },
+        "timeoutMs": { "type": "integer", "minimum": 1 }
+      },
+      "allOf": [
+        {
+          "if": {
+            "properties": {
+              "cmd": { "not": { "enum": ["hello", "session.start", "device.info"] } }
+            }
+          },
+          "then": { "required": ["session"] }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "hello" } } },
+          "then": { "properties": { "params": { "$ref": "#/$defs/HelloParams" } } }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "element.find" } } },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": ["locator"],
+                "properties": {
+                  "locator": { "$ref": "#/$defs/Locator" },
+                  "scope": { "$ref": "#/$defs/NodeRef" },
+                  "max": { "type": "integer", "minimum": 1 },
+                  "ancestors": { "type": "boolean" },
+                  "settle": { "$ref": "#/$defs/Settle" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "tree.get" } } },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "properties": {
+                  "maxDepth": { "type": "integer", "minimum": 0 },
+                  "maxNodes": { "type": "integer", "minimum": 1 },
+                  "root": { "$ref": "#/$defs/NodeRef" },
+                  "webContent": { "type": "string" },
+                  "since": { "type": "string" },
+                  "settle": { "$ref": "#/$defs/Settle" },
+                  "delivery": { "type": "string" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": {
+            "properties": {
+              "cmd": { "pattern": "^action\\.(tap|doubleTap|longPress|clear|setValue)$" }
+            }
+          },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": ["target"],
+                "properties": {
+                  "target": { "$ref": "#/$defs/Target" },
+                  "offset": { "$ref": "#/$defs/Point" },
+                  "checks": { "$ref": "#/$defs/Checks" },
+                  "settle": { "$ref": "#/$defs/Settle" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "action.type" } } },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": ["text"],
+                "properties": {
+                  "target": { "$ref": "#/$defs/Target" },
+                  "text": { "type": "string" },
+                  "mode": {
+                    "type": "string",
+                    "description": "append | replace; other values give invalid-request"
+                  },
+                  "secret": { "type": "boolean" },
+                  "checks": { "$ref": "#/$defs/Checks" },
+                  "settle": { "$ref": "#/$defs/Settle" }
+                }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "action.setValue" } } },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": ["value"],
+                "properties": { "value": { "type": ["number", "string"] } }
+              }
+            }
+          }
+        },
+        {
+          "if": { "properties": { "cmd": { "const": "element.scrollIntoView" } } },
+          "then": {
+            "properties": {
+              "params": {
+                "type": "object",
+                "required": ["target"],
+                "properties": {
+                  "target": { "$ref": "#/$defs/Target" },
+                  "maxSwipes": { "type": "integer", "minimum": 1 }
+                }
+              }
+            }
+          }
+        }
+      ]
+    },
+    "Timing": {
+      "type": "object",
+      "required": ["startedAt", "durationMs"],
+      "properties": {
+        "startedAt": { "$ref": "#/$defs/Timestamp" },
+        "durationMs": { "type": "number", "minimum": 0 },
+        "implicitWaitMs": { "type": "number", "minimum": 0 }
+      }
+    },
+    "Response": {
+      "type": "object",
+      "required": ["v", "id", "ok"],
+      "properties": {
+        "v": { "$ref": "#/$defs/Version" },
+        "id": { "type": "string" },
+        "ok": { "type": "boolean" },
+        "result": { "type": "object" },
+        "error": { "$ref": "#/$defs/Error" },
+        "timing": { "$ref": "#/$defs/Timing" }
+      },
+      "allOf": [
+        {
+          "if": { "properties": { "ok": { "const": true } } },
+          "then": { "required": ["result"], "not": { "required": ["error"] } },
+          "else": { "required": ["error"], "not": { "required": ["result"] } }
+        },
+        {
+          "description": "timing is required except on host-synthesised agent-crashed errors.",
+          "if": {
+            "required": ["error"],
+            "properties": { "error": { "properties": { "code": { "const": "agent-crashed" } } } }
+          },
+          "else": { "required": ["timing"] }
+        }
+      ]
+    },
+    "Event": {
+      "type": "object",
+      "required": ["v", "event", "session", "seq", "time", "source", "data"],
+      "properties": {
+        "v": { "$ref": "#/$defs/Version" },
+        "event": { "type": "string", "pattern": "^[a-z]+\\.[a-zA-Z]+$" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
+        "seq": { "type": "integer", "minimum": 1 },
+        "time": { "$ref": "#/$defs/Timestamp" },
+        "source": { "type": "string", "description": "Known values: KnownEventSource." },
+        "data": { "type": "object" }
+      }
+    },
+    "ResumeFrame": {
+      "description": "Host to agent, on the events WebSocket after reconnecting.",
+      "type": "object",
+      "required": ["type", "session", "afterSeq"],
+      "properties": {
+        "type": { "const": "resume" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
+        "afterSeq": { "type": "integer", "minimum": 0 }
+      }
+    },
+    "GapFrame": {
+      "description": "Agent to host, when events requested by resume are no longer buffered.",
+      "type": "object",
+      "required": ["type", "session", "fromSeq", "toSeq"],
+      "properties": {
+        "type": { "const": "gap" },
+        "session": { "$ref": "#/$defs/InstanceScopedId" },
+        "fromSeq": { "type": "integer", "minimum": 1 },
+        "toSeq": { "type": "integer", "minimum": 1 }
+      }
+    }
+  }
+}
