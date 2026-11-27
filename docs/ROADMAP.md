@@ -19,11 +19,13 @@ Estimates assume no AI-agent speed-up; re-estimate at the end of phase 0.
 
 | ID | Task | Requirements | Agent | Depends on | Status |
 | --- | --- | --- | --- | --- | --- |
-| P0-01 | Monorepo tooling: pnpm workspaces, TypeScript strict, ESLint, Prettier, Vitest, CI on Linux/macOS/Windows | — | core-engineer | — | todo |
-| P0-02 | Design note: normalised UI tree and versioned host↔agent JSON protocol (`docs/design/protocol.md`) | CORE-2, AND-2, IOS-1 | core-engineer | — | todo |
+| P0-01 | Monorepo tooling: pnpm workspaces, TypeScript strict, ESLint, Prettier, Vitest, CI on Linux/macOS/Windows | — | core-engineer | — | done |
+| P0-01a | Commit `pnpm-lock.yaml` and switch CI to `pnpm install --frozen-lockfile` with pnpm caching. **Needs a human** (package installs are blocked in the agents' environment) | — | human | P0-01 | todo |
+| P0-02 | Design note: normalised UI tree and versioned host↔agent JSON protocol (`docs/design/protocol.md`) | CORE-2, AND-2, IOS-1 | core-engineer | — | review |
+| P0-02a | Protocol follow-ups from final review: iOS hit test at the tap point (not `isHittable`); clickable/focusable filter in the Android `within` rule; let `checks.within` take a locator or define the refresh rule; settle before reading in-page rects | CORE-5, HYB-2 | core-engineer | P0-02 | todo |
 | P0-03 | Driver interface types in `@prismtest/core` (session, find, actions, screenshot, tree) | CORE-1 | core-engineer | P0-01, P0-02 | todo |
 | P0-04 | Locator engine v0: `by.role`, `by.text`, `by.testId`, `by.css`, platform overrides, on the normalised tree | CORE-2, CORE-3 | core-engineer | P0-03 | todo |
-| P0-05 | Auto-wait (visible, stable, enabled, unobscured) and retrying `expect` v0 | CORE-5, CORE-6 | core-engineer | P0-03 | todo |
+| P0-05 | Auto-wait (visible, stable, enabled, unobscured) and retrying `expect` v0. Phase 0 cannot act on `off-screen` (scrollIntoView is phase 1): retry until timeout and say so in the error | CORE-5, CORE-6 | core-engineer | P0-03 | todo |
 | P0-06 | Chromium driver over CDP: launch, navigate, find, click, type, screenshot, headless | WEB-1 | web-driver-engineer | P0-03 | todo |
 | P0-07 | Runner skeleton: `test()`, fixtures, hooks, retries, parallel workers; HTML + JUnit reporters | RUN-1, RUN-3 | core-engineer | P0-01 | todo |
 | P0-08 | CLI skeleton: `prism test`, `prism doctor` | EMU-5 | core-engineer | P0-07 | todo |
@@ -34,10 +36,22 @@ Estimates assume no AI-agent speed-up; re-estimate at the end of phase 0.
 | P0-13 | HTTP engine v0: shared request pipeline (methods, headers, JSON bodies, timeouts, metrics hooks) | API-1 | api-engineer | P0-01 | todo |
 | P0-14 | Docs site skeleton for prism.dev with quick-start placeholders | — | docs-writer | P0-01 | todo |
 | P0-15 | Contributor guide, code of conduct, issue and PR templates polished | — | docs-writer | — | todo |
+| P0-16 | CommonJS build alongside ESM for published packages (`require` export condition). Blocks the first npm publish | PRD runtime | core-engineer | P0-01 | todo |
+| P0-17 | Enforce ≥ 85% unit-test coverage on `core` in CI | PRD quality | core-engineer | P0-01 | todo |
+
+## Backlog for later phases
+
+| ID | Task | Requirements | Agent | Phase | Status |
+| --- | --- | --- | --- | --- | --- |
+| B-01 | WebKit Inspector Protocol backend for iOS WKWebViews on the simulator (protocol risk R3); real-device webinspector path is separate (IOS-3) | HYB-1, HYB-2 | web-driver-engineer | 2 | proposed |
 
 ## Needs a human
 
-- [ ] Create the GitHub repository and push this starter.
+- [x] Create the GitHub repository and push this starter.
+- [x] Merge P0-01 (PR #1).
+- [x] Answer the protocol open questions (recorded in `docs/design/protocol.md` §14).
+- [ ] Open and merge the P0-02 PR.
+- [ ] P0-01a: commit `pnpm-lock.yaml` and switch CI to frozen installs.
 - [ ] Claim the npm organisation `prismtest`.
 - [ ] Register the domain prism.dev (or a fallback such as prismtest.dev).
 - [ ] Provide a macOS machine with Xcode for iOS work (P0-10).
@@ -48,3 +62,5 @@ Estimates assume no AI-agent speed-up; re-estimate at the end of phase 0.
 | Date | Change |
 | --- | --- |
 | 2026-11-26 | Roadmap created from the PRD. |
+| 2026-11-27 | P0-01 and P0-02 in review (branches pushed, reviewer approved with nits). Added P0-01a, P0-02a, P0-16, P0-17 and backlog item B-01 from review follow-ups. |
+| 2026-11-27 | P0-01 merged (PR #1). Protocol questions answered by the maintainer. |
