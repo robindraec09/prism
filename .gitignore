@@ -12,6 +12,9 @@ prism-report/
 *.apk
 .gradle/
 local.properties
+packages/android-agent/**/build/
+.idea/
+*.iml
 # iOS
 DerivedData/
 *.xcuserstate
