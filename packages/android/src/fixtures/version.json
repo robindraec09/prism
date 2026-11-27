@@ -1,0 +1,4 @@
+{
+  "protocol": { "min": "1.0", "max": "1.0" },
+  "agent": { "name": "prism-android-agent", "version": "0.1.0", "instanceId": "k7q2xm4p" }
+}

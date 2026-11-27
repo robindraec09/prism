@@ -1,0 +1,7 @@
+{
+  "v": "1.0",
+  "id": "r-4",
+  "ok": true,
+  "result": { "at": { "x": 180, "y": 524 }, "durationMs": 0.5 },
+  "timing": { "startedAt": "2026-11-27T10:15:02.114Z", "durationMs": 3 }
+}

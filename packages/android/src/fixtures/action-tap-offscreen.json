@@ -1,0 +1,12 @@
+{
+  "v": "1.0",
+  "id": "r-5",
+  "ok": false,
+  "error": {
+    "code": "invalid-request",
+    "message": "Point (999, 1) is outside the screen (360 x 800 DIP).",
+    "retryable": false,
+    "details": { "param": "target.point" }
+  },
+  "timing": { "startedAt": "2026-11-27T10:15:02.114Z", "durationMs": 3 }
+}

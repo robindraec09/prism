@@ -1,0 +1,32 @@
+{
+  "v": "1.0",
+  "id": "r-1",
+  "ok": true,
+  "result": {
+    "protocol": { "selected": "1.0", "min": "1.0", "max": "1.0" },
+    "agent": {
+      "name": "prism-android-agent",
+      "version": "0.1.0",
+      "platform": "android",
+      "instanceId": "k7q2xm4p"
+    },
+    "capabilities": ["idle.signal", "idle.noImplicit", "state.focused"],
+    "device": {
+      "platform": "android",
+      "osVersion": "14",
+      "apiLevel": 34,
+      "model": "sdk_gphone64_x86_64",
+      "emulator": true,
+      "screen": {
+        "width": 360,
+        "height": 800,
+        "scale": 3,
+        "rotation": 0,
+        "orientation": "portrait"
+      },
+      "locale": "en-US",
+      "timeZone": "UTC"
+    }
+  },
+  "timing": { "startedAt": "2026-11-27T10:15:02.114Z", "durationMs": 3 }
+}
